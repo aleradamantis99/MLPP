@@ -12,6 +12,10 @@ file(GLOB SOURCES "src/*.cpp")
 
 # Define the executable
 add_executable(MLPP.exe ${SOURCES})
+# Add source files
+file(GLOB TRY_SOURCES "trying/*.cpp")
+# Define the executable
+add_executable(test.exe ${TRY_SOURCES})
 
 # Debug configuration
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Werror -O0")
