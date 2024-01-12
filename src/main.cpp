@@ -43,6 +43,20 @@ void print_line(const Vector2D<float>& v, int max)
         std::cout << '\n';
     }
 }
+
+float cost_function(const std::vector<float>& X, const std::vector<float>& y, float w, float b)
+{
+    auto n = X.size();
+    float total_cost = 0.f;
+    for (auto [X_i, y_i]: std::views::zip(X, y))
+    {
+        float y_pred = w*X_i + b;
+        float diff = (y_i - y_pred)*(y_i - y_pred);
+        total_cost += diff;
+    }
+    return total_cost/(2*n);
+}
+
 int main()
 {
     auto v = gen_line_points(10, 2.1, 1.3);
@@ -53,6 +67,6 @@ int main()
     {
         std::cout << std::format("For X={:.2f}, Y={:.2f}\n", X_i, y_i);
     }
-
+    std::cout << cost_function(X, y, 2.1, 0) << '\n';
     return 0;
 }
