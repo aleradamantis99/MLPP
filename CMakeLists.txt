@@ -13,7 +13,7 @@ file(GLOB SOURCES "src/*.cpp")
 # Define the executable
 add_executable(MLPP.exe ${SOURCES})
 # Add source files
-file(GLOB TRY_SOURCES "trying/*.cpp")
+file(GLOB TRY_SOURCES "trying/test_function_param.cpp")
 # Define the executable
 add_executable(test.exe ${TRY_SOURCES})
 
