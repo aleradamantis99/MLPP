@@ -5,9 +5,21 @@
 #include <algorithm>
 #include <cmath>
 #include <ranges>
-
+#include <functional>
 template <typename T>
 using Vector2D = std::vector<std::vector<T>>;
+
+template <typename F, typename CallableSignature>
+concept Callable = std::is_convertible_v<F, std::function<CallableSignature>>;
+
+template <typename F>
+concept CostSigCallable = Callable<F, float(const std::vector<float>&, const std::vector<float>&, float, float)>;
+
+template <typename F>
+concept GradSigCallable = Callable<F, std::pair<float, float>(const std::vector<float>&, const std::vector<float>&, float, float)>;
+
+//template <typename F>
+//concept GradSigCallable = requires(F f, const std::vector<float>& X, const std::vector<float>& y, float w, float b) { f(X, y, w, b); };
 
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
@@ -53,26 +65,33 @@ std::pair<float, float> cost_gradient(const std::vector<float>& X, const std::ve
     return {dj_dw/n, dj_db/n};
 }
 
-std::pair<float, float> gradient_descent(const std::vector<float>& X, const std::vector<float>& y, float w0, float b0, float alpha, size_t num_iters, cost_functions, gradient_function)
+template <GradSigCallable Gf>
+std::pair<float, float> gradient_descent(const std::vector<float>& X, const std::vector<float>& y, float w0, float b0, float alpha, size_t num_iters, Gf gradient_function)
 {
+    float b = b0, w = w0;
+    
+    for (size_t i=0; i<num_iters; ++i)
+    {
+        auto [dj_dw, dj_db] = gradient_function(X, y, w, b);
+        b = b - alpha*dj_db;
+        w = w - alpha*dj_dw;
+    }
 
+    return {w, b};
 }
 
 
 
 int main()
 {
-    auto v = gen_line_points(10, 2.1, 1.3);
+    auto v = gen_line_points(100, 2.1, 1.3);
     std::vector<float> X = std::move(v[0]);
     std::vector<float> y = std::move(v[1]);
-    std::cout << "Hello world\n";
-    for (auto [X_i, y_i]: std::views::zip(X, y))
-    {
-        std::cout << std::format("For X={:.2f}, Y={:.2f}\n", X_i, y_i);
-    }
     std::cout << cost_function(X, y, 2.1, 0) << '\n';
     float w=2.1, b=1.1;
     auto [dj_dw, dj_db] = cost_gradient(X, y, w, b);
     std::cout << std::format("Gradient at w={} and b={}: w: {}, b: {}\n", w, b, dj_dw, dj_db);
+    auto [gd_w, gd_b] = gradient_descent(X, y, 0, 0, 0.0001, 100000, cost_gradient);
+    std::cout << std::format("Found w:{} and b:{} through gradient descent\n", gd_w, gd_b);
     return 0;
 }
