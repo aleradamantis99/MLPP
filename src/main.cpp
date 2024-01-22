@@ -6,6 +6,7 @@
 #include <cmath>
 #include <ranges>
 #include <functional>
+#include <array2D.hpp>
 template <typename T>
 using Vector2D = std::vector<std::vector<T>>;
 
@@ -20,6 +21,8 @@ concept GradSigCallable = Callable<F, std::pair<float, float>(const std::vector<
 
 //template <typename F>
 //concept GradSigCallable = requires(F f, const std::vector<float>& X, const std::vector<float>& y, float w, float b) { f(X, y, w, b); };
+
+
 
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
@@ -84,6 +87,8 @@ std::pair<float, float> gradient_descent(const std::vector<float>& X, const std:
 
 int main()
 {
+    Array2D<float> a({{1, 2}, {3, 4}});
+    std::cout << a << '\n';
     auto v = gen_line_points(100, 2.1, 1.3);
     std::vector<float> X = std::move(v[0]);
     std::vector<float> y = std::move(v[1]);
