@@ -6,7 +6,13 @@
 #include <cmath>
 #include <ranges>
 #include <functional>
+#include <numeric>
+#include <fstream>
+
 #include <array2D.hpp>
+
+namespace ranges = std::ranges;
+
 template <typename T>
 using Vector2D = std::vector<std::vector<T>>;
 
@@ -17,12 +23,23 @@ template <typename F>
 concept CostSigCallable = Callable<F, float(const std::vector<float>&, const std::vector<float>&, float, float)>;
 
 template <typename F>
-concept GradSigCallable = Callable<F, std::pair<float, float>(const std::vector<float>&, const std::vector<float>&, float, float)>;
+concept GradSigCallable = Callable<F, std::pair<std::vector<float>, float>(const Vector2D<float>&, const std::vector<float>&, const std::vector<float>&, float)>;
 
 //template <typename F>
 //concept GradSigCallable = requires(F f, const std::vector<float>& X, const std::vector<float>& y, float w, float b) { f(X, y, w, b); };
 
-
+void zscore_normalize(Vector2D<float>& X)
+{
+    for (size_t i=0; i<X[0].size(); i++)
+    {
+        float average = ranges::fold_left(X, 0.f, [i](float prev, const std::vector<float>& x){ return prev+x[i]; });
+        float std_dev = ranges::fold_left(X, 0.f, [i, average](float prev, const std::vector<float>& x) { return prev + (x[i] - average)*(x[i] - average); });
+        for (std::vector<float>& v: X)
+        {
+            v[i] = (v[i]-average)/std_dev;
+        }
+    }
+}
 
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
@@ -52,51 +69,86 @@ float cost_function(const std::vector<float>& X, const std::vector<float>& y, fl
     return total_cost/(2*n);
 }
 
-std::pair<float, float> cost_gradient(const std::vector<float>& X, const std::vector<float>& y, float w, float b)
+float dot_product(const std::vector<float>& a, const std::vector<float>& b)
+{
+    return std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.f);
+}
+
+std::pair<std::vector<float>, float> cost_gradient(const Vector2D<float>& X, const std::vector<float>& y, const std::vector<float>& w, float b)
 {
     size_t n = X.size();    
-    float dj_dw = 0;
+    std::vector<float> dj_dw(X[0].size(), 0);
     float dj_db = 0;
-    
+
     for (size_t i=0; i<n; i++)
     {
-        float f_wb = w*X[i] + b;
-        dj_dw += (f_wb - y[i]) * X[i];
-        dj_db += f_wb - y[i];
+        float f_wb = dot_product(w, X[i]) + b;
+        float err = f_wb - y[i];
+        ranges::transform(X[i], dj_dw, std::begin(dj_dw), [err, n](float x, float dw) { return err*x + dw; });
+        dj_db += err;
     }
-        
-    return {dj_dw/n, dj_db/n};
+    ranges::transform(dj_dw, std::begin(dj_dw), [&n](float dw) { return dw/n; });
+    return {std::move(dj_dw), dj_db/n};
 }
 
 template <GradSigCallable Gf>
-std::pair<float, float> gradient_descent(const std::vector<float>& X, const std::vector<float>& y, float w0, float b0, float alpha, size_t num_iters, Gf gradient_function)
+std::pair<std::vector<float>, float> gradient_descent(const Vector2D<float>& X, const std::vector<float>& y, float alpha, size_t num_iters, Gf gradient_function)
 {
-    float b = b0, w = w0;
+    float b = 0;
+    std::vector<float> w(X[0].size(), 0);
     
     for (size_t i=0; i<num_iters; ++i)
     {
         auto [dj_dw, dj_db] = gradient_function(X, y, w, b);
         b = b - alpha*dj_db;
-        w = w - alpha*dj_dw;
+
+        ranges::transform(w, dj_dw, std::begin(w), [alpha](float w,  float dw) { return w-alpha*dw; });
     }
 
-    return {w, b};
+    return {std::move(w), b};
 }
 
+
+std::pair<Vector2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0)
+{
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_real_distribution<float> size_dist(30.f,200.f); 
+    std::uniform_real_distribution<float> noise_dist(-noise,noise); 
+    std::uniform_int_distribution<int> room_dist(0,5); 
+    std::vector<float> house_size(n_houses);
+    ranges::generate(house_size, [&dist = size_dist, &rng] { return dist(rng); });
+    std::vector<float> rooms(n_houses);
+    ranges::generate(rooms, [&dist = room_dist, &rng] { return static_cast<float>(dist(rng)); });
+    std::vector<float> price (n_houses);
+    ranges::transform(house_size, rooms, std::begin(price), [&noise_dist, &rng](float hs, float r) { return (10.f+0.1f*hs+r)+noise_dist(rng); });
+
+    return {Vector2D<float>{std::move(house_size), std::move(rooms)}, std::move(price)};
+}
+
+void write_to_csv(const Vector2D<float>& X, const std::vector<float>& y)
+{
+    std::ofstream houses_file("houses.csv");
+    std::ostream_iterator<char> out(houses_file);
+    std::format_to(out, "precio,metros_cuadrados,habitaciones\n");
+    for (size_t i=0; i<y.size(); ++i)
+    {
+        std::format_to(out, "{},{},{}\n", y[i], X[0][i], X[1][i]);
+    }
+}
 
 
 int main()
 {
     Array2D<float> a({{1, 2}, {3, 4}});
     std::cout << a << '\n';
-    auto v = gen_line_points(100, 2.1, 1.3);
-    std::vector<float> X = std::move(v[0]);
-    std::vector<float> y = std::move(v[1]);
-    std::cout << cost_function(X, y, 2.1, 0) << '\n';
-    float w=2.1, b=1.1;
-    auto [dj_dw, dj_db] = cost_gradient(X, y, w, b);
-    std::cout << std::format("Gradient at w={} and b={}: w: {}, b: {}\n", w, b, dj_dw, dj_db);
-    auto [gd_w, gd_b] = gradient_descent(X, y, 0, 0, 0.0001, 100000, cost_gradient);
-    std::cout << std::format("Found w:{} and b:{} through gradient descent\n", gd_w, gd_b);
+    auto houses = gen_house_prices(100);
+    Vector2D<float>& X = houses.first;
+
+    zscore_normalize(X);
+    std::vector<float>& y = houses.second;
+    write_to_csv(X, y);
+    auto [gd_w, gd_b] = gradient_descent(X, y, 0.00001, 100000, cost_gradient);
+    std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent\n", gd_w[0], gd_w[1], gd_b);
     return 0;
 }
