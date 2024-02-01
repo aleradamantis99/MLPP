@@ -10,6 +10,7 @@
 #include <fstream>
 
 #include <array2D.hpp>
+#include <zscorenormalizer.hpp>
 
 namespace ranges = std::ranges;
 
@@ -27,19 +28,6 @@ concept GradSigCallable = Callable<F, std::pair<std::vector<float>, float>(const
 
 //template <typename F>
 //concept GradSigCallable = requires(F f, const std::vector<float>& X, const std::vector<float>& y, float w, float b) { f(X, y, w, b); };
-
-void zscore_normalize(Vector2D<float>& X)
-{
-    for (size_t i=0; i<X[0].size(); i++)
-    {
-        float average = ranges::fold_left(X, 0.f, [i](float prev, const std::vector<float>& x){ return prev+x[i]; });
-        float std_dev = ranges::fold_left(X, 0.f, [i, average](float prev, const std::vector<float>& x) { return prev + (x[i] - average)*(x[i] - average); });
-        for (std::vector<float>& v: X)
-        {
-            v[i] = (v[i]-average)/std_dev;
-        }
-    }
-}
 
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
@@ -145,10 +133,13 @@ int main()
     auto houses = gen_house_prices(100);
     Vector2D<float>& X = houses.first;
 
-    zscore_normalize(X);
+    ZScoreNormalizer norm;
+    norm.fit_transform(X);
+
     std::vector<float>& y = houses.second;
     write_to_csv(X, y);
     auto [gd_w, gd_b] = gradient_descent(X, y, 0.00001, 100000, cost_gradient);
     std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent\n", gd_w[0], gd_w[1], gd_b);
+
     return 0;
 }
