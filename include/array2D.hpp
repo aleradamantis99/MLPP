@@ -15,7 +15,7 @@ private:
     class Row
     {
     public:
-        Row(P s, P e):
+        Row(P* s, P* e):
             start_(s), end_(e) {}
         
         constexpr T& operator[](std::size_t j)
@@ -26,8 +26,25 @@ private:
         {
             return *(start_+j);
         }
+        constexpr size_t size()
+        {
+            return end_-start_;
+        }
+
+        constexpr P* begin() { return start_; }
+        constexpr const P* begin() const { return start_; }
+
+        constexpr P* cbegin() { return start_; }
+        constexpr const P* cbegin() const { return start_; }
+
+        constexpr P* end() { return end_; }
+        constexpr const P* end() const { return end_; }
+
+        constexpr P* cend() { return end_; }
+        constexpr const P* cend() const { return end_; }
     private:
-        P start_, end_;
+        P* start_;
+        P* end_;
     };
     constexpr std::size_t index_from_pos(std::size_t i, std::size_t j) const
     {
@@ -94,6 +111,7 @@ public:
         return Row(v_.data()+i*cols_, v_.data()+i*cols_+rows_);
     }
 };
+
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Array2D<T>& a)

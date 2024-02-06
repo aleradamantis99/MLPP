@@ -97,10 +97,14 @@ std::pair<std::vector<float>, float> gradient_descent(const Vector2D<float>& X, 
 }
 
 
-std::pair<Vector2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0)
+std::pair<Vector2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0, std::size_t seed = -1)
 {
-    std::random_device dev;
-    std::mt19937 rng(dev());
+    if (seed == static_cast<std::size_t>(-1))
+    {
+        std::random_device dev;
+        seed = dev();
+    }
+    std::mt19937 rng(seed);
     std::uniform_real_distribution<float> size_dist(30.f,200.f); 
     std::uniform_real_distribution<float> noise_dist(-noise,noise); 
     std::uniform_int_distribution<int> room_dist(0,5); 
@@ -114,9 +118,9 @@ std::pair<Vector2D<float>, std::vector<float>> gen_house_prices(size_t n_houses,
     return {Vector2D<float>{std::move(house_size), std::move(rooms)}, std::move(price)};
 }
 
-void write_to_csv(const Vector2D<float>& X, const std::vector<float>& y)
+void write_to_csv(const std::string& filename, const Vector2D<float>& X, const std::vector<float>& y)
 {
-    std::ofstream houses_file("houses.csv");
+    std::ofstream houses_file(filename);
     std::ostream_iterator<char> out(houses_file);
     std::format_to(out, "precio,metros_cuadrados,habitaciones\n");
     for (size_t i=0; i<y.size(); ++i)
@@ -124,22 +128,28 @@ void write_to_csv(const Vector2D<float>& X, const std::vector<float>& y)
         std::format_to(out, "{},{},{}\n", y[i], X[0][i], X[1][i]);
     }
 }
-
+template <typename>
+struct TD;
 
 int main()
 {
     Array2D<float> a({{1, 2}, {3, 4}});
     std::cout << a << '\n';
-    auto houses = gen_house_prices(100);
+    [](const auto& a){ std::cout << a[1][0] <<'\n'; }(a);
+
+    /*auto houses = gen_house_prices(100, 0, 422);
     Vector2D<float>& X = houses.first;
+    std::vector<float>& y = houses.second;
+
+    write_to_csv("houses.csv", X, y);
 
     ZScoreNormalizer norm;
     norm.fit_transform(X);
 
-    std::vector<float>& y = houses.second;
-    write_to_csv(X, y);
-    auto [gd_w, gd_b] = gradient_descent(X, y, 0.00001, 100000, cost_gradient);
-    std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent\n", gd_w[0], gd_w[1], gd_b);
+    
+    write_to_csv("houses_norm.csv", X, y);
+    auto [gd_w, gd_b] = gradient_descent(X, y, 0.0001, 100000, cost_gradient);
+    std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent\n", gd_w[0], gd_w[1], gd_b);*/
 
     return 0;
 }

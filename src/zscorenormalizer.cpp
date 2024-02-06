@@ -1,5 +1,8 @@
 #include <zscorenormalizer.hpp>
 
+/**********
+* PRIVATE *
+**********/
 constexpr float ZScoreNormalizer::norm_sample(float value, size_t feature) const
 {
     return (value-stats_[feature].mean)/stats_[feature].stddev;
@@ -18,6 +21,9 @@ constexpr void ZScoreNormalizer::update_feature_stats(const std::vector<std::vec
     stats_[feature] = Statistics{average, std_dev};
 }
 
+/*********
+* PUBLIC *
+*********/
 constexpr ZScoreNormalizer& ZScoreNormalizer::fit(const std::vector<std::vector<float>>& X)
 {   
     auto n_features = X[0].size();
