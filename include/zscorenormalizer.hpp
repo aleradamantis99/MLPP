@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <cmath>
 
+#include <array2D.hpp>
+#include <utils.hpp>
+
 class ZScoreNormalizer
 {
 private:
@@ -16,12 +19,13 @@ private:
     constexpr float norm_sample(float value, size_t feature) const;
     constexpr float inv_norm_sample(float norm_value, size_t feature) const;
 
-    constexpr void update_feature_stats(const std::vector<std::vector<float>>& X, size_t feature);
+    constexpr void update_feature_stats(const Array2D<float>& X, size_t feature);
 public:
     ZScoreNormalizer() = default;
-    constexpr ZScoreNormalizer& fit(const std::vector<std::vector<float>>& X);
-    constexpr void transform(std::vector<std::vector<float>>& X) const;
-    void fit_transform(std::vector<std::vector<float>>& X);
 
-    void inverse_transform(std::vector<std::vector<float>>& X) const;
+    constexpr ZScoreNormalizer& fit(const Array2D<float>& X);
+    constexpr void transform(Array2D<float>& X) const;
+    void fit_transform(Array2D<float>& X);
+
+    void inverse_transform(Array2D<float>& X) const;
 };

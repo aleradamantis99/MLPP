@@ -13,18 +13,18 @@ constexpr float ZScoreNormalizer::inv_norm_sample(float norm_value, size_t featu
 }
 
 
-constexpr void ZScoreNormalizer::update_feature_stats(const std::vector<std::vector<float>>& X, size_t feature)
+constexpr void ZScoreNormalizer::update_feature_stats(const Array2D<float>& , size_t )
 {
-    namespace ranges = std::ranges;
-    float average = ranges::fold_left(X, 0.f, [feature](float prev, const std::vector<float>& x){ return prev+x[feature]; });
-    float std_dev = std::sqrt(ranges::fold_left(X, 0.f, [feature, average](float prev, const std::vector<float>& x) { return prev + (x[feature] - average)*(x[feature] - average); }));
-    stats_[feature] = Statistics{average, std_dev};
+    /*namespace ranges = std::ranges;
+    float average = ranges::fold_left(X, 0.f, [feature](float prev, const Row<T>& x){ return prev+x[feature]; });
+    float std_dev = std::sqrt(ranges::fold_left(X, 0.f, [feature, average](float prev, const Row<T>& x) { return prev + (x[feature] - average)*(x[feature] - average); }));
+    stats_[feature] = Statistics{average, std_dev};*/
 }
 
 /*********
 * PUBLIC *
 *********/
-constexpr ZScoreNormalizer& ZScoreNormalizer::fit(const std::vector<std::vector<float>>& X)
+constexpr ZScoreNormalizer& ZScoreNormalizer::fit(const Array2D<float>& X)
 {   
     auto n_features = X[0].size();
     stats_.resize(n_features);
@@ -35,7 +35,7 @@ constexpr ZScoreNormalizer& ZScoreNormalizer::fit(const std::vector<std::vector<
     }
     return *this;
 }
-constexpr void ZScoreNormalizer::transform(std::vector<std::vector<float>>& X) const
+constexpr void ZScoreNormalizer::transform(Array2D<float>& X) const
 {
     for (size_t i=0; i<stats_.size(); i++)
     {
@@ -45,7 +45,8 @@ constexpr void ZScoreNormalizer::transform(std::vector<std::vector<float>>& X) c
         }
     }
 }
-void ZScoreNormalizer::fit_transform(std::vector<std::vector<float>>& X)
+
+void ZScoreNormalizer::fit_transform(Array2D<float>& X)
 {
     auto n_features = X[0].size();
     stats_.resize(n_features);
@@ -60,7 +61,7 @@ void ZScoreNormalizer::fit_transform(std::vector<std::vector<float>>& X)
     }
 }
 
-void ZScoreNormalizer::inverse_transform(std::vector<std::vector<float>>& X) const
+void ZScoreNormalizer::inverse_transform(Array2D<float>& X) const
 {
     for (size_t i=0; i<stats_.size(); i++)
     {

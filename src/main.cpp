@@ -5,29 +5,14 @@
 #include <algorithm>
 #include <cmath>
 #include <ranges>
-#include <functional>
 #include <numeric>
 #include <fstream>
 
 #include <array2D.hpp>
-#include <zscorenormalizer.hpp>
-
+//#include <zscorenormalizer.hpp>
+#include <utils.hpp>
 namespace ranges = std::ranges;
 
-template <typename T>
-using Vector2D = std::vector<std::vector<T>>;
-
-template <typename F, typename CallableSignature>
-concept Callable = std::is_convertible_v<F, std::function<CallableSignature>>;
-
-template <typename F>
-concept CostSigCallable = Callable<F, float(const std::vector<float>&, const std::vector<float>&, float, float)>;
-
-template <typename F>
-concept GradSigCallable = Callable<F, std::pair<std::vector<float>, float>(const Vector2D<float>&, const std::vector<float>&, const std::vector<float>&, float)>;
-
-//template <typename F>
-//concept GradSigCallable = requires(F f, const std::vector<float>& X, const std::vector<float>& y, float w, float b) { f(X, y, w, b); };
 
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
@@ -97,7 +82,7 @@ std::pair<std::vector<float>, float> gradient_descent(const Vector2D<float>& X, 
 }
 
 
-std::pair<Vector2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0, std::size_t seed = -1)
+std::pair<Array2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0, std::size_t seed = -1)
 {
     if (seed == static_cast<std::size_t>(-1))
     {
@@ -108,24 +93,37 @@ std::pair<Vector2D<float>, std::vector<float>> gen_house_prices(size_t n_houses,
     std::uniform_real_distribution<float> size_dist(30.f,200.f); 
     std::uniform_real_distribution<float> noise_dist(-noise,noise); 
     std::uniform_int_distribution<int> room_dist(0,5); 
-    std::vector<float> house_size(n_houses);
+    auto gen_size = [&dist = size_dist, &rng] { return dist(rng); };
+    auto gen_rooms = [&dist = room_dist, &rng] { return static_cast<float>(dist(rng)); };
+    auto calc_price = [&noise_dist, &rng](float hs, float r) { return (10.f+0.1f*hs+r)+noise_dist(rng); };
+
+    Array2D<float> house_data(n_houses, 2);
+    std::vector<float> price(n_houses);
+    for (std::size_t i=0; i<n_houses; i++)
+    {
+        auto house = house_data[i];
+        house[0] = gen_size();
+        house[1] = gen_rooms();
+        price[i] = calc_price(house[0], house[1]);
+    }
+    /*std::vector<float> house_size(n_houses);
     ranges::generate(house_size, [&dist = size_dist, &rng] { return dist(rng); });
     std::vector<float> rooms(n_houses);
     ranges::generate(rooms, [&dist = room_dist, &rng] { return static_cast<float>(dist(rng)); });
     std::vector<float> price (n_houses);
-    ranges::transform(house_size, rooms, std::begin(price), [&noise_dist, &rng](float hs, float r) { return (10.f+0.1f*hs+r)+noise_dist(rng); });
+    ranges::transform(house_size, rooms, std::begin(price), [&noise_dist, &rng](float hs, float r) { return (10.f+0.1f*hs+r)+noise_dist(rng); });*/
 
-    return {Vector2D<float>{std::move(house_size), std::move(rooms)}, std::move(price)};
+    return {std::move(house_data), std::move(price)};
 }
-
-void write_to_csv(const std::string& filename, const Vector2D<float>& X, const std::vector<float>& y)
+template <TwoDimensionalAccesible T>
+void write_to_csv(const std::string& filename, const T& X, const std::vector<float>& y)
 {
     std::ofstream houses_file(filename);
     std::ostream_iterator<char> out(houses_file);
     std::format_to(out, "precio,metros_cuadrados,habitaciones\n");
     for (size_t i=0; i<y.size(); ++i)
     {
-        std::format_to(out, "{},{},{}\n", y[i], X[0][i], X[1][i]);
+        std::format_to(out, "{},{},{}\n", y[i], X[i][0], X[i][1]);
     }
 }
 template <typename>
@@ -137,13 +135,21 @@ int main()
     std::cout << a << '\n';
     [](const auto& a){ std::cout << a[1][0] <<'\n'; }(a);
 
-    /*auto houses = gen_house_prices(100, 0, 422);
-    Vector2D<float>& X = houses.first;
+    auto houses = gen_house_prices(100, 0, 422);
+    Array2D<float>& X = houses.first;
     std::vector<float>& y = houses.second;
 
     write_to_csv("houses.csv", X, y);
 
-    ZScoreNormalizer norm;
+    for (auto h: X)
+    {
+        for (auto f: h)
+        {
+            std::cout << f << '\n';
+        }
+    }
+
+    /*ZScoreNormalizer norm;
     norm.fit_transform(X);
 
     
