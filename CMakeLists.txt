@@ -23,3 +23,4 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 # add_subdirectory(libs/someLibrary)
 
 # Link libraries
+
