@@ -57,7 +57,6 @@ public:
         P* start_;
         P* end_;
     };
-private:    
     template <typename P>
     struct Iterator
     {

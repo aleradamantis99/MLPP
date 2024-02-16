@@ -149,7 +149,7 @@ int main()
         }
     }
 
-    ZScoreNormalizer norm;
+    /*ZScoreNormalizer norm;
     norm.fit_transform(X);
     /*
     
