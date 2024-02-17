@@ -6,72 +6,30 @@
 #include <ranges>
 #include <format>
 #include <cassert>
+#include <span>
+
 template <typename T>
 class Array2D
 {
 public:
     using Vector = std::vector<T>;
     template <typename P>
-    class Row
-    {
-    public:
-        Row(P* s, P* e):
-            start_(s), end_(e) {}
-        
-        constexpr T& at(std::size_t j)
-        {
-            auto it = *(start_+j)
-            assert(it < end_);
-            return *(start_+j);
-        }
-        constexpr const T& at(std::size_t j) const
-        {
-            auto it = *(start_+j)
-            assert(it < end_);
-            return *(start_+j);
-        }
-
-        constexpr T& operator[](std::size_t j)
-        {
-            return *(start_+j);
-        }
-        constexpr const T& operator[](std::size_t j) const
-        {
-            return *(start_+j);
-        }
-        constexpr size_t size() const
-        {
-            return end_-start_;
-        }
-
-        constexpr P* begin() { return start_; }
-        constexpr const P* begin() const { return start_; }
-
-        constexpr const P* cbegin() const { return start_; }
-
-        constexpr P* end() { return end_; }
-        constexpr const P* end() const { return end_; }
-
-        constexpr const P* cend() const { return end_; }
-    private:
-        P* start_;
-        P* end_;
-    };
+    using Row = std::span<P, std::dynamic_extent>;
     template <typename P>
     struct Iterator
     {
         using iterator_category = std::random_access_iterator_tag;
-        using value_type = Row<P>;
+        using value_type = std::span<P>;
         using difference_type = std::ptrdiff_t;
-        using pointer = Row<P>*;
-        using reference = Row<P>&&;
+        using pointer = std::span<P>*;
+        using reference = std::span<P>&&;
         constexpr Iterator() = default;
         constexpr Iterator(P* start, size_t cols):
             start_(start), cols_(cols)
             {}
-        constexpr Row<P> operator*() const
+        constexpr value_type operator*() const
         {
-            return Row(start_, start_+cols_);
+            return value_type(start_, start_+cols_);
         }
         constexpr Iterator& operator++()
         {
@@ -125,14 +83,14 @@ public:
 
         constexpr auto operator<=>(const Iterator& rhs) const = default;
 
-        constexpr Row<P> operator->()
+        constexpr value_type operator->()
         {
-            return Row(start_, start_+cols_);
+            return std::span<P>(start_, start_+cols_);
         }
 
-        constexpr Row<P> operator[](size_t offset) const
+        constexpr value_type operator[](size_t offset) const
         {
-            return Row(start_, start_+offset*cols_);
+            return value_type(start_, start_+offset*cols_);
         }
     private:
         P* start_=nullptr;
@@ -204,11 +162,11 @@ public:
 
     constexpr auto operator[](std::size_t i)
     {
-        return Row(v_.data()+i*cols_, v_.data()+i*cols_+rows_);
+        return std::span(v_.data()+i*cols_, v_.data()+i*cols_+rows_);
     }
     constexpr const auto operator[](std::size_t i) const
     {
-        return Row(v_.data()+i*cols_, v_.data()+i*cols_+rows_);
+        return std::span(v_.data()+i*cols_, rows_);
     }
 
     constexpr iterator begin() 

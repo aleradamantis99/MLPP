@@ -91,10 +91,10 @@ std::pair<Array2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, 
     }
     std::mt19937 rng(seed);
     std::uniform_real_distribution<float> size_dist(30.f,200.f); 
-    std::uniform_real_distribution<float> noise_dist(-noise,noise); 
-    std::uniform_int_distribution<int> room_dist(0,5); 
+    std::normal_distribution<float> noise_dist(0,noise); 
+    std::normal_distribution<float> room_dist(2.5,1.5);
     auto gen_size = [&dist = size_dist, &rng] { return dist(rng); };
-    auto gen_rooms = [&dist = room_dist, &rng] { return static_cast<float>(dist(rng)); };
+    auto gen_rooms = [&dist = room_dist, &rng] { auto r = 0.f+std::ceil(dist(rng)); return r >= 0.f? +r : std::ceil(dist.mean()); };
     auto calc_price = [&noise_dist, &rng](float hs, float r) { return (10.f+0.1f*hs+r)+noise_dist(rng); };
 
     Array2D<float> house_data(n_houses, 2);
@@ -141,16 +141,16 @@ int main()
 
     write_to_csv("houses.csv", X, y);
 
-    for (auto h: X)
+    for (auto [h, p]: std::views::zip(X, y) | std::views::stride(3))
     {
         for (auto f: h)
         {
-            std::cout << f << '\n';
+            std::cout << f << ',';
         }
+        std::cout << p << '\n';
     }
-
-    /*ZScoreNormalizer norm;
-    norm.fit_transform(X);
+    //ZScoreNormalizer norm;
+    //norm.fit_transform(X);
     /*
     
     write_to_csv("houses_norm.csv", X, y);

@@ -52,7 +52,7 @@ constexpr void ZScoreNormalizer::transform(Array2D<float>& X) const
 {
     for (size_t i=0; i<stats_.size(); i++)
     {
-        for (std::vector<float>& v: X)
+        for (auto v: X)
         {
             v[i] = norm_sample(v[i], i);
         }
@@ -67,7 +67,7 @@ void ZScoreNormalizer::fit_transform(Array2D<float>& X)
     for (size_t i=0; i<n_features; i++)
     {
         update_feature_stats(X, i);
-        for (std::vector<float>& v: X)
+        for (auto v: X)
         {
             v[i] = norm_sample(v[i], i);
         }
@@ -78,7 +78,7 @@ void ZScoreNormalizer::inverse_transform(Array2D<float>& X) const
 {
     for (size_t i=0; i<stats_.size(); i++)
     {
-        for (std::vector<float>& v: X)
+        for (auto v: X)
         {
             v[i] = inv_norm_sample(v[i], i);
         }
