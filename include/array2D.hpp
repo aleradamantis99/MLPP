@@ -85,12 +85,12 @@ public:
 
         constexpr value_type operator->()
         {
-            return std::span<P>(start_, start_+cols_);
+            return std::span<P>(start_, cols_);
         }
 
         constexpr value_type operator[](size_t offset) const
         {
-            return value_type(start_, start_+offset*cols_);
+            return std::span<P>(start_+offset*cols_, cols_);
         }
     private:
         P* start_=nullptr;
@@ -162,11 +162,11 @@ public:
 
     constexpr auto operator[](std::size_t i)
     {
-        return std::span(v_.data()+i*cols_, v_.data()+i*cols_+rows_);
+        return std::span(v_.data()+i*cols_, cols_);
     }
     constexpr const auto operator[](std::size_t i) const
     {
-        return std::span(v_.data()+i*cols_, rows_);
+        return std::span(v_.data()+i*cols_, cols_);
     }
 
     constexpr iterator begin() 

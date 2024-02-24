@@ -20,13 +20,14 @@ constexpr void ZScoreNormalizer::update_feature_stats(const Array2D<float>& X, s
     {
        average += r[feature];
     }
-    average /= X[0].size();
+
+    average /= X.size();
     float std_dev = 0.f;
     for (auto r: X)
     {
        std_dev += (r[feature]-average)*(r[feature]-average);
     }
-    std_dev = std::sqrt(std_dev);
+    std_dev = std::sqrt(std_dev/X.size());
     /*namespace ranges = std::ranges;
     float average = ranges::fold_left(X, 0.f, [feature](float prev, const Row<T>& x){ return prev+x[feature]; });
     float std_dev = std::sqrt(ranges::fold_left(X, 0.f, [feature, average](float prev, const Row<T>& x) { return prev + (x[feature] - average)*(x[feature] - average); }));

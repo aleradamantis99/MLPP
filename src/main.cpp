@@ -9,10 +9,9 @@
 #include <fstream>
 
 #include <array2D.hpp>
-//#include <zscorenormalizer.hpp>
+#include <zscorenormalizer.hpp>
 #include <utils.hpp>
 namespace ranges = std::ranges;
-
 
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
@@ -29,7 +28,7 @@ Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise =
     return v;
 }
 
-float cost_function(const std::vector<float>& X, const std::vector<float>& y, float w, float b)
+float cost_function(const ranges::range auto& X, const ranges::range auto& y, const ranges::range auto& w, float b)
 {
     auto n = X.size();
     float total_cost = 0.f;
@@ -42,12 +41,12 @@ float cost_function(const std::vector<float>& X, const std::vector<float>& y, fl
     return total_cost/(2*n);
 }
 
-float dot_product(const std::vector<float>& a, const std::vector<float>& b)
+float dot_product(const ranges::range auto& a, const ranges::range auto& b)
 {
     return std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.f);
 }
 
-std::pair<std::vector<float>, float> cost_gradient(const Vector2D<float>& X, const std::vector<float>& y, const std::vector<float>& w, float b)
+std::pair<std::vector<float>, float> cost_gradient(const Array2D<float>& X, const std::vector<float>& y, const std::vector<float>& w, float b)
 {
     size_t n = X.size();    
     std::vector<float> dj_dw(X[0].size(), 0);
@@ -64,8 +63,7 @@ std::pair<std::vector<float>, float> cost_gradient(const Vector2D<float>& X, con
     return {std::move(dj_dw), dj_db/n};
 }
 
-template <GradSigCallable Gf>
-std::pair<std::vector<float>, float> gradient_descent(const Vector2D<float>& X, const std::vector<float>& y, float alpha, size_t num_iters, Gf gradient_function)
+std::pair<std::vector<float>, float> gradient_descent(const Array2D<float>& X, const std::vector<float>& y, float alpha, size_t num_iters, auto gradient_function)
 {
     float b = 0;
     std::vector<float> w(X[0].size(), 0);
@@ -141,7 +139,7 @@ int main()
 
     write_to_csv("houses.csv", X, y);
 
-    for (auto [h, p]: std::views::zip(X, y) | std::views::stride(3))
+    for (auto [h, p]: std::views::zip(X, y))
     {
         for (auto f: h)
         {
@@ -149,13 +147,13 @@ int main()
         }
         std::cout << p << '\n';
     }
-    //ZScoreNormalizer norm;
-    //norm.fit_transform(X);
-    /*
+    ZScoreNormalizer norm;
+    norm.fit_transform(X);
     
     write_to_csv("houses_norm.csv", X, y);
     auto [gd_w, gd_b] = gradient_descent(X, y, 0.0001, 100000, cost_gradient);
-    std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent\n", gd_w[0], gd_w[1], gd_b);*/
+    float cost = cost_function(X, y, gd_w, gd_b);
+    std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);
 
     return 0;
 }
