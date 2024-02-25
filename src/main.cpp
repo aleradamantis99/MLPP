@@ -11,8 +11,10 @@
 #include <array2D.hpp>
 #include <zscorenormalizer.hpp>
 #include <utils.hpp>
+#include <linearregression.hpp>
+#include <mlcommons.hpp>
 namespace ranges = std::ranges;
-
+using namespace ML;
 Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
 {
     Vector2D<float> v (2, std::vector<float>(n_points));
@@ -26,57 +28,6 @@ Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise =
         y = (x*w + b) + noise_dist(rng);
     }
     return v;
-}
-
-float cost_function(const ranges::range auto& X, const ranges::range auto& y, const ranges::range auto& w, float b)
-{
-    auto n = X.size();
-    float total_cost = 0.f;
-    for (auto [X_i, y_i]: std::views::zip(X, y))
-    {
-        float y_pred = w*X_i + b;
-        float diff = (y_i - y_pred)*(y_i - y_pred);
-        total_cost += diff;
-    }
-    return total_cost/(2*n);
-}
-
-float dot_product(const ranges::range auto& a, const ranges::range auto& b)
-{
-    return std::inner_product(std::begin(a), std::end(a), std::begin(b), 0.f);
-}
-
-std::pair<std::vector<float>, float> cost_gradient(const Array2D<float>& X, const std::vector<float>& y, const std::vector<float>& w, float b)
-{
-    size_t n = X.size();    
-    std::vector<float> dj_dw(X[0].size(), 0);
-    float dj_db = 0;
-
-    for (size_t i=0; i<n; i++)
-    {
-        float f_wb = dot_product(w, X[i]) + b;
-        float err = f_wb - y[i];
-        ranges::transform(X[i], dj_dw, std::begin(dj_dw), [err, n](float x, float dw) { return err*x + dw; });
-        dj_db += err;
-    }
-    ranges::transform(dj_dw, std::begin(dj_dw), [&n](float dw) { return dw/n; });
-    return {std::move(dj_dw), dj_db/n};
-}
-
-std::pair<std::vector<float>, float> gradient_descent(const Array2D<float>& X, const std::vector<float>& y, float alpha, size_t num_iters, auto gradient_function)
-{
-    float b = 0;
-    std::vector<float> w(X[0].size(), 0);
-    
-    for (size_t i=0; i<num_iters; ++i)
-    {
-        auto [dj_dw, dj_db] = gradient_function(X, y, w, b);
-        b = b - alpha*dj_db;
-
-        ranges::transform(w, dj_dw, std::begin(w), [alpha](float w,  float dw) { return w-alpha*dw; });
-    }
-
-    return {std::move(w), b};
 }
 
 
@@ -137,6 +88,10 @@ int main()
     Array2D<float>& X = houses.first;
     std::vector<float>& y = houses.second;
 
+    auto houses_test = gen_house_prices(20, 0, 123);
+    Array2D<float>& X_test = houses_test.first;
+    std::vector<float>& y_test = houses_test.second;
+
     write_to_csv("houses.csv", X, y);
 
     for (auto [h, p]: std::views::zip(X, y))
@@ -149,11 +104,15 @@ int main()
     }
     ZScoreNormalizer norm;
     norm.fit_transform(X);
-    
+    norm.transform(X_test);
     write_to_csv("houses_norm.csv", X, y);
-    auto [gd_w, gd_b] = gradient_descent(X, y, 0.0001, 100000, cost_gradient);
-    float cost = cost_function(X, y, gd_w, gd_b);
-    std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);
+    LinearRegression lr(0.1, 1000);
 
-    return 0;
+    lr.fit(X, y);
+    std::vector<float> y_pred = lr.predict(X);
+
+    float R2 = lr.score(X, y);
+    float R2_test = lr.score(X_test, y_test);
+    std::cout << std::format("R2 for base dataset: {}\nR2 for test: {}", R2, R2_test);
+    //std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);
 }

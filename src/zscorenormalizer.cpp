@@ -1,5 +1,6 @@
 #include <zscorenormalizer.hpp>
-
+namespace ML
+{
 /**********
 * PRIVATE *
 **********/
@@ -49,7 +50,8 @@ constexpr ZScoreNormalizer& ZScoreNormalizer::fit(const Array2D<float>& X)
     }
     return *this;
 }
-constexpr void ZScoreNormalizer::transform(Array2D<float>& X) const
+
+void ZScoreNormalizer::transform(Array2D<float>& X) const
 {
     for (size_t i=0; i<stats_.size(); i++)
     {
@@ -84,4 +86,5 @@ void ZScoreNormalizer::inverse_transform(Array2D<float>& X) const
             v[i] = inv_norm_sample(v[i], i);
         }
     }
+}
 }

@@ -7,6 +7,8 @@
 #include <array2D.hpp>
 #include <utils.hpp>
 
+namespace ML
+{
 class ZScoreNormalizer
 {
 private:
@@ -24,8 +26,9 @@ public:
     ZScoreNormalizer() = default;
 
     constexpr ZScoreNormalizer& fit(const Array2D<float>& X);
-    constexpr void transform(Array2D<float>& X) const;
+    void transform(Array2D<float>& X) const;
     void fit_transform(Array2D<float>& X);
 
     void inverse_transform(Array2D<float>& X) const;
 };
+}

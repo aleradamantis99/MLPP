@@ -7,7 +7,8 @@
 #include <format>
 #include <cassert>
 #include <span>
-
+namespace ML
+{
 template <typename T>
 class Array2D
 {
@@ -72,7 +73,7 @@ public:
             Iterator new_it = *this;
             return new_it -= offset;
         }
-        constexpr size_t operator-(const Iterator& it) const
+        constexpr std::ptrdiff_t operator-(const Iterator& it) const
         {
             return start_-it.start_;
         }
@@ -197,4 +198,7 @@ std::ostream& operator<<(std::ostream& os, const Array2D<T>& a)
         os << '\n';
     }
     return os;
+}
+
+
 }
