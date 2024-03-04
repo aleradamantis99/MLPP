@@ -7,29 +7,19 @@
 #include <ranges>
 #include <numeric>
 #include <fstream>
+#include <sstream>
+#include <string>
+
 
 #include <array2D.hpp>
 #include <zscorenormalizer.hpp>
 #include <utils.hpp>
 #include <linearregression.hpp>
+#include <logsticregression.hpp>
 #include <mlcommons.hpp>
+
 namespace ranges = std::ranges;
 using namespace ML;
-Vector2D<float> gen_line_points(size_t n_points, float w, float b, float noise = 0.f)
-{
-    Vector2D<float> v (2, std::vector<float>(n_points));
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_real_distribution<float> dist(0.f,20.f); 
-    std::uniform_real_distribution<float> noise_dist(-noise,noise); 
-    for (auto [x, y]: std::views::zip(v[0], v[1]))
-    {
-        x = dist(rng);
-        y = (x*w + b) + noise_dist(rng);
-    }
-    return v;
-}
-
 
 std::pair<Array2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0, std::size_t seed = -1)
 {
@@ -64,6 +54,8 @@ std::pair<Array2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, 
 
     return {std::move(house_data), std::move(price)};
 }
+
+
 template <TwoDimensionalAccesible T>
 void write_to_csv(const std::string& filename, const T& X, const std::vector<float>& y)
 {
@@ -75,12 +67,83 @@ void write_to_csv(const std::string& filename, const T& X, const std::vector<flo
         std::format_to(out, "{},{},{}\n", y[i], X[i][0], X[i][1]);
     }
 }
+
+std::vector<std::string> getNextLineAndSplitIntoTokens(std::istream& str)
+{
+    std::vector<std::string>   result;
+    std::string                line;
+    std::getline(str,line);
+
+    std::stringstream          lineStream(line);
+    std::string                cell;
+
+    while(std::getline(lineStream,cell, ','))
+    {
+        if (cell[cell.size()-1] == '\r')
+        {
+            cell.erase(cell.size()-1);
+        }
+        result.push_back(cell);
+    }
+
+    
+    return result;
+}
+auto read_csv(const std::string& filename)
+{
+    std::ifstream csv_file(filename);
+    size_t n_columns = getNextLineAndSplitIntoTokens(csv_file).size()-1;
+    std::vector<float> X;
+    std::vector<int> y;
+    size_t rows = 0;
+    while(csv_file)
+    {
+        std::vector<std::string> line = getNextLineAndSplitIntoTokens(csv_file);
+        if(line.empty()) continue;
+
+        for (const auto& f: line | ranges::views::take(n_columns))
+        {
+            float value = std::stof(f);
+            X.push_back(value);
+        }
+
+        try
+        {
+            y.push_back(std::stoi(line.at(n_columns)));
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
+        
+        rows++;
+    }
+    X.shrink_to_fit();
+    y.shrink_to_fit();
+    Array2D a_X (std::move(X), rows, n_columns);
+    return std::pair<Array2D<float>, std::vector<int>>{std::move(a_X), std::move(y)};
+}
+
 template <typename>
 struct TD;
 
 int main()
 {
-    Array2D<float> a({{1, 2}, {3, 4}});
+    auto cancer = read_csv("haberman.csv");
+
+    Array2D<float>& X = cancer.first;
+    std::vector<int>& y = cancer.second;
+    ZScoreNormalizer norm;
+    norm.fit_transform(X);
+
+    LogisticRegression lr({.learning_rate=0.1, .max_iter=1000});
+    
+    lr.fit(X, y);
+    std::cout << lr.score(X, y);
+
+
+    /*Array2D<float> a({{1, 2}, {3, 4}});
     std::cout << a << '\n';
     [](const auto& a){ std::cout << a[1][0] <<'\n'; }(a);
 
@@ -113,6 +176,6 @@ int main()
 
     float R2 = lr.score(X, y);
     float R2_test = lr.score(X_test, y_test);
-    std::cout << std::format("R2 for base dataset: {}\nR2 for test: {}", R2, R2_test);
-    //std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);
+    std::cout << std::format("R2 for base dataset: {}\nR2 for test: {}\n", R2, R2_test);
+    //std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);*/
 }

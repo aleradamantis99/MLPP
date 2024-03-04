@@ -12,10 +12,11 @@ namespace ML
 template <typename T>
 class Array2D
 {
+    template <typename P>
+    using Row_ = std::span<P, std::dynamic_extent>;
 public:
     using Vector = std::vector<T>;
-    template <typename P>
-    using Row = std::span<P, std::dynamic_extent>;
+    
     template <typename P>
     struct Iterator
     {
@@ -106,7 +107,7 @@ public:
 public:
     using iterator = Iterator<T>;
     using const_iterator = Iterator<const T>;
-
+    using Row = std::span<T>;
     constexpr Array2D() = default;
     constexpr Array2D(std::size_t rows, std::size_t cols, const T& value):
         rows_(rows),
@@ -130,6 +131,12 @@ public:
             v_[i] = d;
         }
     }
+
+    constexpr Array2D(std::vector<T> v, size_t rows, size_t cols):
+        rows_(rows),
+        cols_(cols),
+        v_(std::move(v)) 
+    {}
 
     constexpr size_t size() const
     {
