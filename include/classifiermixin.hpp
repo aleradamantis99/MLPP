@@ -5,7 +5,7 @@
 namespace ML
 {
 template <typename D>
-class ClassifierMixin: CRTP<D, ClassifierMixin>
+class ClassifierMixin: public CRTP<D, ClassifierMixin>
 {
 public:
     constexpr static EstimatorType estimator_type = EstimatorType::classifier;

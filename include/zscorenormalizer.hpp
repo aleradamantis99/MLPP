@@ -6,10 +6,11 @@
 
 #include <array2D.hpp>
 #include <utils.hpp>
+#include <transformermixin.hpp>
 
 namespace ML
 {
-class ZScoreNormalizer
+class ZScoreNormalizer: public TransformerMixin<ZScoreNormalizer>
 {
 private:
     struct Statistics
@@ -25,9 +26,8 @@ private:
 public:
     ZScoreNormalizer() = default;
 
-    constexpr ZScoreNormalizer& fit(const Array2D<float>& X);
+    ZScoreNormalizer& fit(const Array2D<float>& X);
     void transform(Array2D<float>& X) const;
-    void fit_transform(Array2D<float>& X);
 
     void inverse_transform(Array2D<float>& X) const;
 };

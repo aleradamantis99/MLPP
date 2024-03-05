@@ -6,7 +6,7 @@
 namespace ML
 {
 template <typename D>
-class RegressorMixin: CRTP<D, RegressorMixin>
+class RegressorMixin: public CRTP<D, RegressorMixin>
 {
 public:
     constexpr static EstimatorType estimator_type = EstimatorType::regressor;

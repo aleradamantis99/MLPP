@@ -151,7 +151,7 @@ int main()
     std::cout << lr.score(X, y);
     */
 
-    /*Array2D<float> a({{1, 2}, {3, 4}});
+    Array2D<float> a({{1, 2}, {3, 4}});
     std::cout << a << '\n';
     [](const auto& a){ std::cout << a[1][0] <<'\n'; }(a);
 
@@ -185,5 +185,5 @@ int main()
     float R2 = lr.score(X, y);
     float R2_test = lr.score(X_test, y_test);
     std::cout << std::format("R2 for base dataset: {}\nR2 for test: {}\n", R2, R2_test);
-    //std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);*/
+    //std::cout << std::format("Found w1:{} w2:{} and b:{} through gradient descent (Cost: {})\n", gd_w[0], gd_w[1], gd_b, cost);
 }

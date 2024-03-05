@@ -39,7 +39,7 @@ constexpr void ZScoreNormalizer::update_feature_stats(const Array2D<float>& X, s
 /*********
 * PUBLIC *
 *********/
-constexpr ZScoreNormalizer& ZScoreNormalizer::fit(const Array2D<float>& X)
+ZScoreNormalizer& ZScoreNormalizer::fit(const Array2D<float>& X)
 {   
     auto n_features = X[0].size();
     stats_.resize(n_features);
@@ -55,21 +55,6 @@ void ZScoreNormalizer::transform(Array2D<float>& X) const
 {
     for (size_t i=0; i<stats_.size(); i++)
     {
-        for (auto v: X)
-        {
-            v[i] = norm_sample(v[i], i);
-        }
-    }
-}
-
-void ZScoreNormalizer::fit_transform(Array2D<float>& X)
-{
-    auto n_features = X[0].size();
-    stats_.resize(n_features);
-
-    for (size_t i=0; i<n_features; i++)
-    {
-        update_feature_stats(X, i);
         for (auto v: X)
         {
             v[i] = norm_sample(v[i], i);
