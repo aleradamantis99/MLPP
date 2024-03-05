@@ -17,7 +17,7 @@
 #include <linearregression.hpp>
 #include <logsticregression.hpp>
 #include <mlcommons.hpp>
-
+#include <polynomialfeatures.hpp>
 namespace ranges = std::ranges;
 using namespace ML;
 
@@ -125,12 +125,20 @@ auto read_csv(const std::string& filename)
     return std::pair<Array2D<float>, std::vector<int>>{std::move(a_X), std::move(y)};
 }
 
+void println(auto v)
+{
+    std::cout << v << std::endl;
+}
+
 template <typename>
 struct TD;
 
+
 int main()
 {
-    auto cancer = read_csv("haberman.csv");
+    [[maybe_unused]] PolynomialFeatures pf({.degree = std::pair{2, 3}, .interaction_only=true});
+    std::cout << is_classifier<LinearRegression>() << std::endl;
+    /*auto cancer = read_csv("haberman.csv");
 
     Array2D<float>& X = cancer.first;
     std::vector<int>& y = cancer.second;
@@ -141,7 +149,7 @@ int main()
     
     lr.fit(X, y);
     std::cout << lr.score(X, y);
-
+    */
 
     /*Array2D<float> a({{1, 2}, {3, 4}});
     std::cout << a << '\n';

@@ -4,12 +4,12 @@
 #include <vector>
 #include "mlcommons.hpp"
 #include "array2D.hpp"
-
+#include "classifiermixin.hpp"
 
 
 namespace ML
 {
-class LogisticRegression
+class LogisticRegression : public ClassifierMixin<LogisticRegression>
 {
 public:
     static constexpr size_t DEFAULT_MAX_ITER = 10000;
