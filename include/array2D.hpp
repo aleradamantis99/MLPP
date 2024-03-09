@@ -14,9 +14,18 @@ class Array2D
 {
     template <typename P>
     using Row_ = std::span<P, std::dynamic_extent>;
+
+    template <typename P>
+    struct Columns_;
+
+    using ConstColumns = Columns_<const T>;
+    using Columns = Columns_<T>;
 public:
+    using ConstColumn = ConstColumns::Column;
+    using Column = Columns::Column;
     using Vector = std::vector<T>;
     
+
     template <typename P>
     struct Iterator
     {
@@ -119,7 +128,9 @@ public:
         rows_(rows),
         cols_(cols),
         v_(rows_*cols_) 
-    {}
+    {
+        //auto view = std::views::chunk(v_, cols);
+    }
 
     constexpr Array2D(std::initializer_list<std::initializer_list<T>> init):
         rows_(init.size()),
@@ -177,6 +188,15 @@ public:
         return std::span(v_.data()+i*cols_, cols_);
     }
 
+    constexpr auto operator[]()
+    {
+        return Columns(cols_, rows_, v_.data());
+    }
+    constexpr const auto operator[]() const
+    {
+        return ConstColumns(cols_, rows_, v_.data());
+    }
+
     constexpr iterator begin() 
     {
         return {v_.data(), cols_}; 
@@ -192,6 +212,57 @@ public:
 
 };
 
+template <typename T>
+template <typename P>
+struct Array2D<T>::Columns_
+{
+    struct Column
+    {
+        using ViewType = decltype(std::ranges::subrange(std::declval<P*>(), std::declval<P*>()) | std::views::stride(std::declval<size_t>()));
+
+        ViewType column_;
+        size_t size_;
+        constexpr Column(P* begin, P* end, size_t cols, size_t rows):
+            column_(std::ranges::subrange(begin, end) | std::views::stride(cols)),
+            size_(rows)
+        {}
+
+        constexpr size_t size() const
+        {
+            return size_; //Could also do return column_.size() so we don't have to store size_, but that involves some calculations.
+        }
+
+        constexpr auto begin()
+        {
+            return std::begin(column_);
+        }
+
+        constexpr auto begin() const { return std::cbegin(column_); }
+
+        constexpr auto cbegin() const { return begin(); }
+
+        constexpr auto end() { return std::end(column_); }
+        constexpr auto end() const { return std::cend(column_); }
+
+        constexpr auto cend() const { return end(); }
+    };
+    constexpr Column operator[](size_t i)
+    {
+        auto start = begin+i;
+        auto end = start + cols_*(rows_-1)+1;
+        assert(start < end and end <= begin+rows_*cols_);
+        return Column(start, start + cols_*(rows_-1)+1, cols_, rows_);
+    }
+    constexpr Column operator[](size_t i) const
+    {
+        auto start = begin+i;
+        auto end = start + cols_*(rows_-1)+1;
+        assert(start < end and end <= begin+rows_*cols_);
+        return Column(start, start + cols_*(rows_-1)+1, cols_, rows_);
+    }
+    size_t cols_, rows_;
+    P* begin;
+};
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Array2D<T>& a)
