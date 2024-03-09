@@ -51,8 +51,9 @@ ZScoreNormalizer& ZScoreNormalizer::fit(const Array2D<float>& X)
     return *this;
 }
 
-void ZScoreNormalizer::transform(Array2D<float>& X) const
+Array2D<float> ZScoreNormalizer::transform(const Array2D<float>& X_) const
 {
+    Array2D<float> X = X_; //Explicit copy to enable NRVO (instead of receiving parameter by value)
     for (size_t i=0; i<stats_.size(); i++)
     {
         for (auto v: X)
@@ -60,6 +61,7 @@ void ZScoreNormalizer::transform(Array2D<float>& X) const
             v[i] = norm_sample(v[i], i);
         }
     }
+    return X;
 }
 
 void ZScoreNormalizer::inverse_transform(Array2D<float>& X) const

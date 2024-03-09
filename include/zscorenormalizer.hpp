@@ -27,7 +27,7 @@ public:
     ZScoreNormalizer() = default;
 
     ZScoreNormalizer& fit(const Array2D<float>& X);
-    void transform(Array2D<float>& X) const;
+    [[nodiscard]] Array2D<float> transform(const Array2D<float>& X_) const;
 
     void inverse_transform(Array2D<float>& X) const;
 };

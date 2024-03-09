@@ -7,10 +7,10 @@ template <typename D>
 class TransformerMixin: public CRTP<D, TransformerMixin>
 {
 public:
-    void fit_transform(Array2D<float>& X)
+    [[nodiscard]] Array2D<float> fit_transform(const Array2D<float>& X)
     {
         this->underlying().fit(X);
-        this->underlying().transform(X);
+        return this->underlying().transform(X);
     }
 };
 } //namespace ML

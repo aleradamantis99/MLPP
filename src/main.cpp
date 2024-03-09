@@ -10,7 +10,6 @@
 #include <sstream>
 #include <string>
 
-
 #include <array2D.hpp>
 #include <zscorenormalizer.hpp>
 #include <utils.hpp>
@@ -18,8 +17,10 @@
 #include <logsticregression.hpp>
 #include <mlcommons.hpp>
 #include <polynomialfeatures.hpp>
+#include <generator.hpp>
 namespace ranges = std::ranges;
 using namespace ML;
+
 
 std::pair<Array2D<float>, std::vector<float>> gen_house_prices(size_t n_houses, float noise = 0, std::size_t seed = -1)
 {
@@ -125,19 +126,44 @@ auto read_csv(const std::string& filename)
     return std::pair<Array2D<float>, std::vector<int>>{std::move(a_X), std::move(y)};
 }
 
-void println(auto v)
-{
-    std::cout << v << std::endl;
-}
-
 template <typename>
 struct TD;
 
+coro::generator<int> range(int n)
+{
+    for (int i=0;i<n; i++)
+    {
+        co_yield i;
+    }
+}
+coro::generator<coro::generator<int>> range2d(int n, int m)
+{
+    for (int i=0;i<n; i++)
+    {
+        co_yield range(m);
+    }
+}
 
+struct A
+{
+    int operator[](int , int, int)
+    {
+        return 3;
+    }
+    int operator[]()
+    {
+        return 0;
+    }
+};
 int main()
 {
-    [[maybe_unused]] PolynomialFeatures pf({.degree = std::pair{2, 3}, .interaction_only=true});
+    auto iota=std::views::iota(1, 4);
+    bool with_replacement = false;
+    auto gen = (with_replacement?combinations_with_replacement(iota, 2):combinations(iota, 2));
+    print(gen);
+    PolynomialFeatures pf({.degree = std::pair(2, 3), .include_bias=false});
     std::cout << is_classifier<LinearRegression>() << std::endl;
+
     /*auto cancer = read_csv("haberman.csv");
 
     Array2D<float>& X = cancer.first;
@@ -152,9 +178,9 @@ int main()
     */
 
     Array2D<float> a({{1, 2}, {3, 4}});
-    std::cout << a << '\n';
-    [](const auto& a){ std::cout << a[1][0] <<'\n'; }(a);
-
+    auto x = pf.fit_transform(a);
+    print(a);
+    print(x);
     auto houses = gen_house_prices(100, 0, 422);
     Array2D<float>& X = houses.first;
     std::vector<float>& y = houses.second;
@@ -174,8 +200,8 @@ int main()
         std::cout << p << '\n';
     }
     ZScoreNormalizer norm;
-    norm.fit_transform(X);
-    norm.transform(X_test);
+    X = norm.fit_transform(X);
+    X_test = norm.transform(X_test);
     write_to_csv("houses_norm.csv", X, y);
     LinearRegression lr(0.1, 1000);
 
